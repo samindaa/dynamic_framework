@@ -8,6 +8,10 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#if defined(ENERGIA)
+#define EMBEDDED_MODE
+#endif
+
 #if defined(EMBEDDED_MODE)
 #else
 #include <map>

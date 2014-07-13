@@ -5,9 +5,10 @@
  *      Author: sam
  */
 
-#if !defined(EMBEDDED_MODE)
-#else
 #include "Config.h"
+
+#if defined(EMBEDDED_MODE)
+#else
 //
 #include <fstream>
 #include <cstdlib>
