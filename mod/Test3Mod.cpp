@@ -14,12 +14,12 @@
 
 #include "Test3Mod.h"
 
-MAKE_MODULE(Test3Mod, Thread Two)
+MAKE_MODULE(Test3Mod, Thread Two, 25)
 
 void Test3Mod::update(Test3Rep& theTest3Rep)
 {
-  //std::cout << "provides->Test3Mod" << std::endl;
+  std::cout << "provides->Test3Mod" << std::endl;
   theTest3Rep.test3 = rand();
-  //std::cout << "theTest3Rep.test3=" << theTest3Rep.test3 << std::endl;
+  std::cout << "theTest3Rep.test3=" << theTest3Rep.test3 << std::endl;
 }
 

@@ -261,8 +261,9 @@ class Controller
     {
       public:
         const char* threadName;
+        const int threadPriority;
         Node* moduleNode;
-        ModuleEntry(const char* threadName, Node* moduleNode) : threadName(threadName), moduleNode(moduleNode) {}
+        ModuleEntry(const char* threadName, const int& threadPriority, Node* moduleNode) : threadName(threadName), threadPriority(threadPriority), moduleNode(moduleNode) {}
     };
 
     class RepresentationEntry
@@ -292,6 +293,7 @@ class Controller
       public:
         const char* threadName;
         int threadIndex;
+        int threadPriority;
         bool isActive;
         typedef Vector<Node*> NodeVector;
         //-- Intermediate vectors
@@ -301,8 +303,9 @@ class Controller
         //-- Operation vector
         NodeVector operationVector;
 
-        Thread(const char* threadName, const int& threadIndex) :
-            threadName(threadName), threadIndex(threadIndex), isActive(false){}
+        Thread(const char* threadName, const int& threadPriority, const int& threadIndex) :
+            threadName(threadName), threadIndex(threadIndex), threadPriority(threadPriority), isActive(false){}
+
         virtual ~Thread()
         {
           for (NodeVector::iterator iter = transferredVector.begin();
@@ -342,7 +345,7 @@ class Controller
 
     static Controller& getInstance();
     static void deleteInstance();
-    void addModule(const char* threadName, Node* theInstance);
+    void addModule(const char* threadName, const int& threadPriority, Node* theInstance);
     void providedRepresentation(const char* moduleName, Node* theInstance, void (*updateRepresentation)(Node* , Node* ), RepresentationCloneable* representationCloneable);
     void requiredRepresentation(const char* moduleName, const char* representationName);
     void usedRepresentation(const char* moduleName, const char* representationName);
@@ -389,7 +392,7 @@ class ModuleLoader
     T theInstance;
 
   public:
-    ModuleLoader(const char* threadName) { Controller::getInstance().addModule(threadName, &theInstance); }
+    ModuleLoader(const char* threadName, const int& threadPriority) { Controller::getInstance().addModule(threadName, threadPriority, &theInstance); }
     virtual ~ModuleLoader() { }
 };
 

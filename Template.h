@@ -37,17 +37,19 @@ class NAME##Base : public ModuleTemplate<NAME>                              \
 #define END_MODULE };                                                      \
 
 
-#define MAKE_MODULE_1(NAME)                      ModuleLoader<NAME> _the##NAME##ModuleTemplate("def");
-#define MAKE_MODULE_2(NAME, THREAD_NAME)         ModuleLoader<NAME> _the##NAME##ModuleTemplate(#THREAD_NAME);
+#define MAKE_MODULE_1(NAME)                               ModuleLoader<NAME> _the##NAME##ModuleTemplate("def", 20);
+#define MAKE_MODULE_2(NAME, THREAD_NAME)                  ModuleLoader<NAME> _the##NAME##ModuleTemplate(#THREAD_NAME, 20);
+#define MAKE_MODULE_3(NAME, THREAD_NAME, THREAD_PRIORITY) ModuleLoader<NAME> _the##NAME##ModuleTemplate(#THREAD_NAME, THREAD_PRIORITY);
 
 // The interim macro that simply strips the excess and ends up with the required macro
-#define MAKE_MODULE_X(x, NAME, THREAD_NAME, FUNC, ...)  FUNC
+#define MAKE_MODULE_X(x, NAME, THREAD_NAME, THREAD_PRIORITY, FUNC, ...)  FUNC
 
 // The macro that the programmer uses
 #define MAKE_MODULE(...)    MAKE_MODULE_X(,##__VA_ARGS__,                   \
+                            MAKE_MODULE_3(__VA_ARGS__),                     \
                             MAKE_MODULE_2(__VA_ARGS__),                     \
                             MAKE_MODULE_1(__VA_ARGS__)                      \
-                                         )
+                            )
 
 #define REPRESENTATION(NAME)                                                \
 class NAME;                                                                 \

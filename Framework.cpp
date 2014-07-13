@@ -14,9 +14,7 @@
 //
 #if !defined(EMBEDDED_MODE)
 #include <iostream>
-#include <vector> // with threads#include <cstring>#include <thread>#include <pthread.h>#include <sched.h>
-#endif
-
+#include <vector> // with threads#include <cstring>#include <thread>#include <pthread.h>#include <sched.h>#endif
 Controller* Controller::theInstance = 0;
 
 Controller::Controller() :
@@ -47,7 +45,7 @@ Controller::~Controller()
   threadVector.clear();
 }
 
-void Controller::addModule(const char* threadName, Node* theInstance)
+void Controller::addModule(const char* threadName, const int& threadPriority, Node* theInstance)
 {
   // Check if a module type exits
   for (ModuleVector::iterator iter = moduleVector.begin(); iter != moduleVector.end(); iter++)
@@ -64,7 +62,7 @@ void Controller::addModule(const char* threadName, Node* theInstance)
   }
 
   theInstance->setComputationNode(true);
-  ModuleEntry* newModuleEntry = new ModuleEntry(threadName, theInstance);
+  ModuleEntry* newModuleEntry = new ModuleEntry(threadName, threadPriority, theInstance);
   moduleVector.push_back(newModuleEntry);
 }
 
@@ -207,7 +205,8 @@ void Controller::computeGraph()
     {
       if (!theThread)
       {
-        theThread = new Thread(moduleEntry->threadName, threadVector.size());
+        theThread = new Thread(moduleEntry->threadName, moduleEntry->threadPriority,
+            threadVector.size());
         threadVector.push_back(theThread);
       }
     }
@@ -215,12 +214,13 @@ void Controller::computeGraph()
     {
       if (threadVector.empty())
       {
-        theThread = new Thread("def", threadVector.size());
+        theThread = new Thread("def", 20, threadVector.size());
         threadVector.push_back(theThread);
       }
       else
         theThread = threadVector[0];
     }
+    theThread->threadPriority = std::max(theThread->threadPriority, moduleEntry->threadPriority);
     theThread->graphStructureVector.push_back(moduleEntry->moduleNode);
     moduleEntry->moduleNode->setThreadIndex(theThread->threadIndex);
   }
@@ -467,7 +467,7 @@ void Controller::sort()
 
 void Controller::mainLoop()
 {
-  if (threadsActivated || (threadVector.size() <= 1) || (!threadsActivated && threadVector.size()))
+  if (!threadsActivated || (threadVector.size() <= 1) || (!threadsActivated && threadVector.size()))
   {
     for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
         thread++)
@@ -498,7 +498,7 @@ void Controller::mainLoop()
       int policy;
       if (pthread_getschedparam(threadHandle, &policy, &sch) != 0)
         std::cout << "Unsuccessful in setting thread realtime prio" << std::endl;
-      sch.sched_priority = 10; //<< configurable
+      sch.sched_priority = (*thread)->threadPriority; //<< configurable
       if (pthread_setschedparam(threadHandle, SCHED_FIFO, &sch))
         std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
     }
