@@ -19,7 +19,7 @@ void Controller::setBaudRate(const unsigned long& baudRate)
   this->baudRate = baudRate;
 }
 
-unsigned long Graph::getBaudRate() const
+unsigned long Controller::getBaudRate() const
 {
   return baudRate;
 }

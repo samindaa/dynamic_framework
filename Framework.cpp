@@ -33,11 +33,11 @@ Controller::~Controller()
   {
     Thread* thread = *iter;
     // Release()
+#if !defined(EMBEDDED_MODE)
     for (Thread::NodeVector::iterator iter2 = thread->operationVector.begin();
         iter2 != thread->operationVector.end(); iter2++)
     {
       Node* node = *iter2;
-#if !defined(EMBEDDED_MODE)
       if (node->isComputationNode())
         ((Module*) node)->config.persist();
     }

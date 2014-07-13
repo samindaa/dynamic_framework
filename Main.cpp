@@ -5,7 +5,9 @@
  *      Author: sam
  */
 
+
 #include "Framework.h"
+#if !defined(EMBEDDED_MODE)
 //
 #include <iostream>
 #include <csignal>
@@ -35,3 +37,4 @@ int main(int argc, char** argv)
   std::cout << "*** end  ***" << std::endl;
   return 0;
 }
+#endif

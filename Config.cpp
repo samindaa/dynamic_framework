@@ -5,7 +5,7 @@
  *      Author: sam
  */
 
-#if defined(EMBEDDED_MODE)
+#if !defined(EMBEDDED_MODE)
 #else
 #include "Config.h"
 //
