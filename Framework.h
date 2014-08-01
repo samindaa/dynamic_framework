@@ -144,6 +144,96 @@ class Vector
 
 };
 
+// Streams
+class ObjectInputStream
+{
+  public:
+    virtual ~ObjectInputStream() {}
+    virtual void read(unsigned char* destination, const int& size) =0;
+};
+
+class ObjectOutputStream
+{
+  public:
+    virtual ~ObjectOutputStream() {}
+    virtual void write(const unsigned char* source, const int& size) =0;
+};
+
+class BufferInputOutputStream : public ObjectInputStream, public ObjectOutputStream
+{
+  public:
+    unsigned char* buffer;
+    int bufferLocation;
+
+    BufferInputOutputStream(unsigned char* buffer) : buffer(buffer), bufferLocation(0) {}
+    virtual ~BufferInputOutputStream() {}
+    void read(unsigned char* destination, const int& size) { memcpy(destination, buffer + bufferLocation, size); bufferLocation += size; }
+    void write(const unsigned char* source, const int& size) { memcpy(buffer + bufferLocation, source, size); bufferLocation += size; }
+    void reset() { bufferLocation = 0; }
+};
+
+class ObjectInput
+{
+  private:
+    ObjectInputStream* in;
+
+  public:
+    ObjectInput(ObjectInputStream* in) : in(in) {}
+    virtual ~ObjectInput() {}
+
+    template<class T> void read(T& d) {/** TODO */}
+    template<class T> void read(T* d) {/** TODO */}
+                      void read(unsigned char* destination, const int& size) { in->read(destination, size); }
+};
+
+class ObjectOutput
+{
+  private:
+    ObjectOutputStream* out;
+
+  public:
+    ObjectOutput(ObjectOutputStream* out) : out(out) {}
+    virtual ~ObjectOutput() {}
+
+    template<class T> void write(const T& d) {/** TODO */}
+    template<class T> void write(T* d) {/** TODO */}
+                      void write(const unsigned char* source, const int& size) { out->write(source, size); }
+};
+
+class Externalizable
+{
+  public:
+    virtual ~Externalizable() {}
+    virtual void serialize(ObjectInput* in, ObjectOutput* out) =0;
+
+    virtual size_t readFromBuffer(unsigned char *buffer)
+    {
+      BufferInputOutputStream b(buffer);
+      ObjectInput in(&b);
+      serialize(&in, 0);
+      return b.bufferLocation;
+    }
+
+    virtual size_t writeToBuffer(unsigned char *buffer)
+    {
+      BufferInputOutputStream b(buffer);
+      ObjectOutput out(&b);
+      serialize(0, &out);
+      return b.bufferLocation;
+    }
+
+  protected:
+    virtual void serializeBuffer(ObjectInput* in, ObjectOutput* out, unsigned char* p, const int& size)
+    {
+      if (in)
+        in->read(p, size);
+      if (out)
+        out->write(p, size);
+    }
+};
+
+#define SERIALIZE_BUFFER(NAME, IN_OUT, SIZE)  serializeBuffer(in, out, IN_OUT, SIZE);
+
 // ADT's for building the graph.
 /**
  * Every object in the graph is an instance of a Node class. But this node
@@ -190,13 +280,13 @@ class Node
     Node* getTransferredNode()                          const { return this->transferredNode; }
     virtual const char* getName()                       const =0;
     virtual unsigned int getSize()                      const =0;
-    virtual void stream(Node* destination)                    =0;
 
   protected: // Copy constructor and operator is not allowed inside the framework
     Node(Node const&);
     Node& operator=(Node const&);
 };
 
+// -- Modules
 class Module : public Node
 {
 #if !defined(EMBEDDED_MODE)
@@ -217,21 +307,19 @@ class ModuleTemplate : public Module
   public: void stream(Node*)      {}
 };
 
-
-class Representation: public Node
+// -- Representations
+class Representation: public Node, public Externalizable
 {
   public: void (*updateThis)(Node* , Node* );
   public: Representation() : Node(), updateThis(0)  {}
   public: virtual ~Representation()                 {}
   public: virtual void draw() const                 {}
   public:
-    virtual void stream(Node* that)
+    virtual void serialize(ObjectInput* in, ObjectOutput* out)
     {
-      // FixMe: this is a simple memcopy of the derived class
       const size_t baseSize = sizeof(Representation);
-      unsigned char* source = (unsigned char*) this;
-      unsigned char* destination = (unsigned char*) that;
-      memcpy(destination + baseSize, source + baseSize, getSize() - baseSize);
+      unsigned char* p = (unsigned char*) this;
+      SERIALIZE_BUFFER(getName(),p+baseSize,getSize() - baseSize);
     }
 #if !defined(EMBEDDED_MODE)
   public:
@@ -302,9 +390,19 @@ class Controller
         NodeVector topoQueue;
         //-- Operation vector
         NodeVector operationVector;
-
+        //-- Transfer objects between threads
+        unsigned char* buffer;
+#if !defined(EMBEDDED_MODE)
+        enum { BUFFER_SIZE = 1024 }; // some storage capacity (bytes)
+#endif
         Thread(const char* threadName, const int& threadPriority, const int& threadIndex) :
-            threadName(threadName), threadIndex(threadIndex), threadPriority(threadPriority), isActive(false){}
+            threadName(threadName), threadIndex(threadIndex), threadPriority(threadPriority), isActive(
+                false), buffer(0)
+        {
+#if !defined(EMBEDDED_MODE)
+          buffer = new unsigned char[BUFFER_SIZE];
+#endif
+        }
 
         virtual ~Thread()
         {
@@ -315,6 +413,10 @@ class Controller
           transferredVector.clear();
           topoQueue.clear();
           operationVector.clear();
+
+#if !defined(EMBEDDED_MODE)
+          delete[] buffer;
+#endif
         }
     };
 
@@ -345,6 +447,7 @@ class Controller
 
     static Controller& getInstance();
     static void deleteInstance();
+    static void main(const bool& threadsActivated);
     void addModule(const char* threadName, const int& threadPriority, Node* theInstance);
     void providedRepresentation(const char* moduleName, Node* theInstance, void (*updateRepresentation)(Node* , Node* ), RepresentationCloneable* representationCloneable);
     void requiredRepresentation(const char* moduleName, const char* representationName);

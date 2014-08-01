@@ -14,10 +14,7 @@
 //
 #if !defined(EMBEDDED_MODE)
 #include <iostream>
-#include <vector> // with threads#include <cstring>#include <thread>#include <pthread.h>#include <sched.h>#endif
-Controller* Controller::theInstance = 0;
-
-Controller::Controller() :
+#include <vector> // with threads#include <cstring>#include <thread>#include <pthread.h>#include <sched.h>#endifController* Controller::theInstance = 0;Controller::Controller() :
     threadsActivated(false), errorState(false)
 {
 #if defined(EMBEDDED_MODE)
@@ -497,10 +494,11 @@ void Controller::mainLoop()
       sch.sched_priority = sched_get_priority_max(SCHED_FIFO);
       int policy;
       if (pthread_getschedparam(threadHandle, &policy, &sch) != 0)
-        std::cout << "Unsuccessful in setting thread realtime prio" << std::endl;
+        std::cout << "Unsuccessful in setting thread realtime priority" << std::endl;
       sch.sched_priority = (*thread)->threadPriority; //<< configurable
       if (pthread_setschedparam(threadHandle, SCHED_FIFO, &sch))
-        std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
+        std::cout << "Failed to setschedparam: " << std::strerror(errno) << " threadPriority: "
+            << (*thread)->threadPriority << std::endl;
     }
 
     for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++)
@@ -550,16 +548,17 @@ void Controller::threadTransfer(Thread* thread)
   for (Thread::NodeVector::iterator iter2 = thread->transferredVector.begin();
       iter2 != thread->transferredVector.end(); ++iter2)
   {
-    Node* thisNode = *iter2;
-    Node* transferredNode = thisNode->getTransferredNode();
+    Representation* thisNode = (Representation*) *iter2;
+    Representation* thatNode = (Representation*) thisNode->getTransferredNode();
 #if !defined(EMBEDDED_MODE)
     if (thread->isActive)
-      ((Representation*) transferredNode)->sync.lock();
+      thatNode->sync.lock();
 #endif
-    transferredNode->stream(thisNode);
+    ((Externalizable*) thatNode)->writeToBuffer(thread->buffer);
+    ((Externalizable*) thisNode)->readFromBuffer(thread->buffer);
 #if !defined(EMBEDDED_MODE)
     if (thread->isActive)
-      ((Representation*) transferredNode)->sync.unlock();
+      thatNode->sync.unlock();
 #endif
   }
 }
@@ -637,4 +636,17 @@ void Controller::deleteInstance()
     delete theInstance;
   }
   theInstance = 0;
+}
+
+void Controller::main(const bool& threadsActivated)
+{
+  if (theInstance)
+  {
+    if (threadsActivated)
+      theInstance->activateThreads();
+    theInstance->computeGraph();
+    theInstance->sort();
+    theInstance->stream();
+    theInstance->mainLoop();
+  }
 }

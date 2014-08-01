@@ -9,6 +9,20 @@
 #define TEMPLATE_H_
 
 #include "Framework.h"
+
+// Streams
+#define SERIALIZE_1(IN_OUT)         {/**TODO*/ }
+#define SERIALIZE_2(NAME, IN_OUT)   {/**TODO*/ }
+
+// The interim macro that simply strips the excess and ends up with the required macro
+#define SERIALIZE_X(x, NAME, IN_OUT, FUNC, ...)  FUNC
+
+// The macro that the programmer uses
+#define SERIALIZE(...)    SERIALIZE_X(,##__VA_ARGS__,                   \
+                          SERIALIZE_2(__VA_ARGS__),                     \
+                          SERIALIZE_1(__VA_ARGS__)                      \
+                            )
+
 // Macros to create the computational units as well as the representations that they provide.
 #define MODULE(NAME)                                                        \
 class NAME;                                                                 \

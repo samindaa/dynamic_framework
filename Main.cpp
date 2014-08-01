@@ -5,7 +5,6 @@
  *      Author: sam
  */
 
-
 #include "Framework.h"
 #if !defined(EMBEDDED_MODE)
 //
@@ -27,12 +26,7 @@ int main(int argc, char** argv)
   std::cout << "*** start ***" << std::endl;
   // register signal SIGINT and signal handler
   signal(SIGINT, signalHandler);
-  Controller& controller = Controller::getInstance();
-  controller.activateThreads();
-  controller.computeGraph();
-  controller.sort();
-  controller.stream();
-  controller.mainLoop();
+  Controller::getInstance().main(true);
   Controller::deleteInstance();
   std::cout << "*** end  ***" << std::endl;
   return 0;
