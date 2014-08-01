@@ -181,9 +181,8 @@ class ObjectInput
     ObjectInput(ObjectInputStream* in) : in(in) {}
     virtual ~ObjectInput() {}
 
-    template<class T> void read(T& d) {/** TODO */}
-    template<class T> void read(T* d) {/** TODO */}
                       void read(unsigned char* destination, const int& size) { in->read(destination, size); }
+    template<class T> void read(T& d) { read((unsigned char*) &d, sizeof(T)); }
 };
 
 class ObjectOutput
@@ -195,15 +194,14 @@ class ObjectOutput
     ObjectOutput(ObjectOutputStream* out) : out(out) {}
     virtual ~ObjectOutput() {}
 
-    template<class T> void write(const T& d) {/** TODO */}
-    template<class T> void write(T* d) {/** TODO */}
                       void write(const unsigned char* source, const int& size) { out->write(source, size); }
+    template<class T> void write(const T& d) { write((const unsigned char*) &d, sizeof(T)); }
 };
 
-class Externalizable
+class Serializable
 {
   public:
-    virtual ~Externalizable() {}
+    virtual ~Serializable() {}
     virtual void serialize(ObjectInput* in, ObjectOutput* out) =0;
 
     virtual size_t readFromBuffer(unsigned char *buffer)
@@ -223,12 +221,20 @@ class Externalizable
     }
 
   protected:
-    virtual void serializeBuffer(ObjectInput* in, ObjectOutput* out, unsigned char* p, const int& size)
+    void serializeBuffer(ObjectInput* in, ObjectOutput* out, unsigned char* p, const int& size)
     {
       if (in)
         in->read(p, size);
       if (out)
         out->write(p, size);
+    }
+
+    template <class T> void serializeObject(ObjectInput* in, ObjectOutput* out, const char*, T& p)
+    {
+        if (in)
+          in->read(p);
+        if (out)
+          out->write(p);
     }
 };
 
@@ -308,7 +314,7 @@ class ModuleTemplate : public Module
 };
 
 // -- Representations
-class Representation: public Node, public Externalizable
+class Representation: public Node, public Serializable
 {
   public: void (*updateThis)(Node* , Node* );
   public: Representation() : Node(), updateThis(0)  {}
@@ -393,7 +399,7 @@ class Controller
         //-- Transfer objects between threads
         unsigned char* buffer;
 #if !defined(EMBEDDED_MODE)
-        enum { BUFFER_SIZE = 1024 }; // some storage capacity (bytes)
+        enum { BUFFER_SIZE = 512 }; // some storage capacity (bytes)
 #endif
         Thread(const char* threadName, const int& threadPriority, const int& threadIndex) :
             threadName(threadName), threadIndex(threadIndex), threadPriority(threadPriority), isActive(

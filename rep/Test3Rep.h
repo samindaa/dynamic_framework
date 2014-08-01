@@ -14,10 +14,20 @@ REPRESENTATION(Test3Rep)
 class Test3Rep: public Test3RepBase
 {
   public:
-    int test3;
+    int iTest3;
+    float fTest3;
+    double dTest3;
+
     Test3Rep() :
-        test3(0)
+        iTest3(0), fTest3(0.0f), dTest3(0.0f)
     {
+    }
+
+    void serialize(ObjectInput* in, ObjectOutput* out)
+    {
+      SERIALIZE(iTest3)
+      SERIALIZE(fTest3)
+      SERIALIZE(dTest3)
     }
 };
 

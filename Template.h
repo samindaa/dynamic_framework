@@ -11,8 +11,8 @@
 #include "Framework.h"
 
 // Streams
-#define SERIALIZE_1(IN_OUT)         {/**TODO*/ }
-#define SERIALIZE_2(NAME, IN_OUT)   {/**TODO*/ }
+#define SERIALIZE_1(IN_OUT)         serializeObject(in, out, #IN_OUT, IN_OUT);
+#define SERIALIZE_2(NAME, IN_OUT)   serializeObject(in, out, NAME, IN_OUT);
 
 // The interim macro that simply strips the excess and ends up with the required macro
 #define SERIALIZE_X(x, NAME, IN_OUT, FUNC, ...)  FUNC

@@ -14,7 +14,13 @@
 //
 #if !defined(EMBEDDED_MODE)
 #include <iostream>
-#include <vector> // with threads#include <cstring>#include <thread>#include <pthread.h>#include <sched.h>#endifController* Controller::theInstance = 0;Controller::Controller() :
+#include <vector> // with threads#include <cstring>#include <thread>#include <pthread.h>#include <sched.h>#endif
+/**
+ *
+ */Controller* Controller::theInstance = 0;/**
+ *
+ */
+Controller::Controller() :
     threadsActivated(false), errorState(false)
 {
 #if defined(EMBEDDED_MODE)
@@ -554,8 +560,8 @@ void Controller::threadTransfer(Thread* thread)
     if (thread->isActive)
       thatNode->sync.lock();
 #endif
-    ((Externalizable*) thatNode)->writeToBuffer(thread->buffer);
-    ((Externalizable*) thisNode)->readFromBuffer(thread->buffer);
+    ((Serializable*) thatNode)->writeToBuffer(thread->buffer);
+    ((Serializable*) thisNode)->readFromBuffer(thread->buffer);
 #if !defined(EMBEDDED_MODE)
     if (thread->isActive)
       thatNode->sync.unlock();
