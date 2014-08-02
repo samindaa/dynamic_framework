@@ -14,10 +14,17 @@
 //
 #if !defined(EMBEDDED_MODE)
 #include <iostream>
-#include <vector> // with threads#include <cstring>#include <thread>#include <pthread.h>#include <sched.h>#endif
+#include <vector> // with threads
+#include <cstring>
+#include <thread>
+#include <pthread.h>
+#include <sched.h>
+#endif
 /**
  *
- */Controller* Controller::theInstance = 0;/**
+ */
+Controller* Controller::theInstance = 0;
+/**
  *
  */
 Controller::Controller() :
@@ -181,9 +188,9 @@ Node* Controller::getRepresentation(const char* moduleName, const char* represen
   return 0;
 }
 
-void Controller::activateThreads()
+void Controller::activateThreads(const bool& threadsActivated)
 {
-  threadsActivated = true;
+  this->threadsActivated = threadsActivated;
 }
 
 void Controller::computeGraph()
@@ -223,7 +230,12 @@ void Controller::computeGraph()
       else
         theThread = threadVector[0];
     }
+
+#if !defined(EMBEDDED_MODE)
     theThread->threadPriority = std::max(theThread->threadPriority, moduleEntry->threadPriority);
+#else
+    theThread->threadPriority = max(theThread->threadPriority, moduleEntry->threadPriority);
+#endif
     theThread->graphStructureVector.push_back(moduleEntry->moduleNode);
     moduleEntry->moduleNode->setThreadIndex(theThread->threadIndex);
   }
@@ -585,7 +597,7 @@ void Controller::threadUpdate(Thread* thread)
       if (thread->isActive)
         ((Representation*) node)->sync.lock();
 #endif
-      ((Representation*) node)->updateThis(node->getPreviousNodes()[0], node);
+      ((Representation*) node)->updateThis(*node->getPreviousNodes().begin(), node);
 #if !defined(EMBEDDED_MODE)
       if (thread->isActive)
         ((Representation*) node)->sync.unlock();
@@ -648,8 +660,7 @@ void Controller::main(const bool& threadsActivated)
 {
   if (theInstance)
   {
-    if (threadsActivated)
-      theInstance->activateThreads();
+    theInstance->activateThreads(threadsActivated);
     theInstance->computeGraph();
     theInstance->sort();
     theInstance->stream();

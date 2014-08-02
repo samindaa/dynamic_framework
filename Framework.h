@@ -461,7 +461,7 @@ class Controller
     Node* getRepresentation(const char* moduleName, const char* representationName);
 
     /** Computational resources */
-    void activateThreads();
+    void activateThreads(const bool& threadsActivated);
     void computeGraph();
     void sort();
     void mainLoop();

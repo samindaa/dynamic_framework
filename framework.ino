@@ -7,4 +7,5 @@ void setup()
 
 void loop()
 {
+  Controller::getInstance().main(false);
 }
