@@ -482,7 +482,7 @@ void Controller::sort()
 
 void Controller::mainLoop()
 {
-  if (!threadsActivated || (threadVector.size() <= 1) || (!threadsActivated && threadVector.size()))
+  if (!threadsActivated || (threadVector.size() <= 1))
   {
     for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
         thread++)
@@ -498,9 +498,9 @@ void Controller::mainLoop()
       }
     }
   }
-#if !defined(EMBEDDED_MODE)
   else
   {
+#if !defined(EMBEDDED_MODE)
     std::vector<std::thread> threads;
     for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
         thread++)
@@ -521,8 +521,9 @@ void Controller::mainLoop()
 
     for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++)
       (*iter).join();
-  }
 #endif
+  }
+
 }
 
 void Controller::threadLoop(Thread* thread)

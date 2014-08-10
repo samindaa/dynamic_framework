@@ -9,10 +9,10 @@
 # Settings:
 
 # makefile target for this configuration
-targetname="fwc++0x"
+targetname="fwx"
 
-builddir="build/fwc++0x"
-bin="fwc++0x"
+builddir="build/fwx"
+bin="fwx"
 
 
 # list of needed libraries
