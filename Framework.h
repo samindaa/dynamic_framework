@@ -325,7 +325,7 @@ class Representation: public Node, public Serializable
     {
       const size_t baseSize = sizeof(Representation);
       unsigned char* p = (unsigned char*) this;
-      SERIALIZE_BUFFER(getName(),p+baseSize,getSize() - baseSize);
+      SERIALIZE_BUFFER(getName(), p + baseSize, getSize() - baseSize);
     }
 #if !defined(EMBEDDED_MODE)
   public:
@@ -477,6 +477,9 @@ class Controller
     static void threadUpdate(Thread* thread);
     static void threadLoop(Thread* thread);
 
+#if !defined(EMBEDDED_MODE)
+    void mainThreadLoop();
+#endif
     void closeThreads();
     void errorHandler();
     void purgeEntries();

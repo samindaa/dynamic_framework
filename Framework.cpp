@@ -190,7 +190,9 @@ Node* Controller::getRepresentation(const char* moduleName, const char* represen
 
 void Controller::activateThreads(const bool& threadsActivated)
 {
+#if !defined(EMBEDDED_MODE)
   this->threadsActivated = threadsActivated;
+#endif
 }
 
 void Controller::computeGraph()
@@ -498,33 +500,40 @@ void Controller::mainLoop()
       }
     }
   }
-  else
-  {
 #if !defined(EMBEDDED_MODE)
-    std::vector<std::thread> threads;
-    for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
-        thread++)
-    {
-      threads.push_back(std::thread(threadLoop, *thread));
-      pthread_t threadHandle = threads[threads.size() - 1].native_handle();
-      sched_param sch;
-      // We'll set the priority to the maximum.
-      sch.sched_priority = sched_get_priority_max(SCHED_FIFO);
-      int policy;
-      if (pthread_getschedparam(threadHandle, &policy, &sch) != 0)
-        std::cout << "Unsuccessful in setting thread realtime priority" << std::endl;
-      sch.sched_priority = (*thread)->threadPriority; //<< configurable
-      if (pthread_setschedparam(threadHandle, SCHED_FIFO, &sch))
-        std::cout << "Failed to setschedparam: " << std::strerror(errno) << " threadPriority: "
-            << (*thread)->threadPriority << std::endl;
-    }
-
-    for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++)
-      (*iter).join();
+  else
+    mainThreadLoop();
 #endif
+}
+
+#if !defined(EMBEDDED_MODE)
+void Controller::mainThreadLoop()
+{
+  std::vector<std::thread> threads;
+  for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end(); thread++)
+  {
+    threads.push_back(std::thread(threadLoop, *thread));
+    pthread_t threadHandle = threads[threads.size() - 1].native_handle();
+    sched_param sch;
+    int policy;
+    if (pthread_getschedparam(threadHandle, &policy, &sch) != 0)
+      std::cout << "Unsuccessful in pthread_getschedparam" << std::endl;
+    else
+      std::cout << "Successful in pthread_getschedparam" << std::endl;
+
+    sch.sched_priority = (*thread)->threadPriority; //<< configurable
+    if (pthread_setschedparam(threadHandle, SCHED_FIFO, &sch))
+      std::cout << "Failed to pthread_setschedparam: " << std::strerror(errno)
+          << " threadPriority: " << (*thread)->threadPriority << std::endl;
+    else
+      std::cout << "Set pthread_setschedparam to threadPriority: " << (*thread)->threadPriority
+          << std::endl;
   }
 
+  for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++)
+    (*iter).join();
 }
+#endif
 
 void Controller::threadLoop(Thread* thread)
 {
