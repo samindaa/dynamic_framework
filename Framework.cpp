@@ -16,6 +16,7 @@
 #include <iostream>
 #include <vector> // with threads
 #include <cstring>
+#include <chrono>
 #include <thread>
 #include <pthread.h>
 #include <sched.h>
@@ -544,6 +545,7 @@ void Controller::threadLoop(Thread* thread)
   {
     threadTransfer(thread);
     threadUpdate(thread);
+    //std::this_thread::sleep_for(std::chrono::milliseconds(5)); //<< debug and timing
   }
 #endif
 }

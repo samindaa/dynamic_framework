@@ -23,7 +23,7 @@ tool_list=""
 # compiler and linker flags
 cxx="g++-4.4"
 #cxx="g++"
-optional_cflags="-Wno-deprecated -ggdb -O3 -m32 -std=c++0x -U_FORTIFY_SOURCE"
+optional_cflags="-Wno-deprecated -ggdb -O3 -m32 -std=c++0x -U_FORTIFY_SOURCE -D_GLIBCXX_USE_NANOSLEEP"
 #optional_cflags="-Wno-deprecated -ggdb"
 optional_lflags="-std=c++0x -pthread"
 #optional_lflags="-pthread"
