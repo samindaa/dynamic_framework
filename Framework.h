@@ -453,7 +453,6 @@ class Controller
 
     static Controller& getInstance();
     static void deleteInstance();
-    static void main(const bool& threadsActivated);
     void addModule(const char* threadName, const int& threadPriority, Node* theInstance);
     void providedRepresentation(const char* moduleName, Node* theInstance, void (*updateRepresentation)(Node* , Node* ), RepresentationCloneable* representationCloneable);
     void requiredRepresentation(const char* moduleName, const char* representationName);
@@ -464,22 +463,28 @@ class Controller
     void activateThreads(const bool& threadsActivated);
     void computeGraph();
     void sort();
-    void mainLoop();
 
 #if defined(EMBEDDED_MODE)
+    void setup();
+    void loop();
+
     void setBaudRate(const unsigned long& baudRate);
     unsigned long getBaudRate() const;
 #endif
 
   private:
     static void threadAllocate(Thread* thread);
+#if !defined(EMBEDDED_MODE)
     static void threadTransfer(Thread* thread);
+#endif
     static void threadUpdate(Thread* thread);
     static void threadLoop(Thread* thread);
 
 #if !defined(EMBEDDED_MODE)
+    void mainLoop();
     void mainThreadLoop();
 #endif
+
     void closeThreads();
     void errorHandler();
     void purgeEntries();
@@ -492,7 +497,11 @@ class Controller
     Controller& operator=(Controller const&);
     static Controller* theInstance;
 
-  public: /** verbose */
+  public:
+#if !defined(EMBEDDED_MODE)
+    static void main(const bool& threadsActivated);
+#endif
+    /** verbose */
     void stream();
 };
 

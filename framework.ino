@@ -3,9 +3,10 @@
 
 void setup()
 {
+  Controller::getInstance().setup();
 }
 
 void loop()
 {
-  Controller::getInstance().main(false);
+  Controller::getInstance().loop();
 }

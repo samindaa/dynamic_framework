@@ -483,6 +483,23 @@ void Controller::sort()
   purgeEntries();
 }
 
+#if defined(EMBEDDED_MODE)
+void Controller::setup()
+{
+  for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
+      thread++)
+  threadAllocate(*thread);
+}
+
+void Controller::loop()
+{
+  for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
+      thread++)
+  threadUpdate(*thread);
+}
+#endif
+
+#if !defined(EMBEDDED_MODE)
 void Controller::mainLoop()
 {
   if (!threadsActivated || (threadVector.size() <= 1))
@@ -501,13 +518,10 @@ void Controller::mainLoop()
       }
     }
   }
-#if !defined(EMBEDDED_MODE)
   else
     mainThreadLoop();
-#endif
 }
 
-#if !defined(EMBEDDED_MODE)
 void Controller::mainThreadLoop()
 {
   std::vector<std::thread> threads;
@@ -534,6 +548,19 @@ void Controller::mainThreadLoop()
   for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++)
     (*iter).join();
 }
+
+void Controller::main(const bool& threadsActivated)
+{
+  if (theInstance)
+  {
+    theInstance->activateThreads(threadsActivated);
+    theInstance->computeGraph();
+    theInstance->sort();
+    theInstance->stream();
+    theInstance->mainLoop();
+  }
+}
+
 #endif
 
 void Controller::threadLoop(Thread* thread)
@@ -573,6 +600,7 @@ void Controller::threadAllocate(Thread* thread)
   }
 }
 
+#if !defined(EMBEDDED_MODE)
 void Controller::threadTransfer(Thread* thread)
 {
   for (Thread::NodeVector::iterator iter2 = thread->transferredVector.begin();
@@ -592,6 +620,7 @@ void Controller::threadTransfer(Thread* thread)
 #endif
   }
 }
+#endif
 
 void Controller::threadUpdate(Thread* thread)
 {
@@ -666,16 +695,4 @@ void Controller::deleteInstance()
     delete theInstance;
   }
   theInstance = 0;
-}
-
-void Controller::main(const bool& threadsActivated)
-{
-  if (theInstance)
-  {
-    theInstance->activateThreads(threadsActivated);
-    theInstance->computeGraph();
-    theInstance->sort();
-    theInstance->stream();
-    theInstance->mainLoop();
-  }
 }
