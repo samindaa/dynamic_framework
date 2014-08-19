@@ -350,7 +350,7 @@ class RepresentationCloneable
 
 class Controller
 {
-  public:
+  private:
     class ModuleEntry
     {
       public:
@@ -451,28 +451,11 @@ class Controller
     unsigned long baudRate;
 #endif
 
-    static Controller& getInstance();
-    static void deleteInstance();
-    void addModule(const char* threadName, const int& threadPriority, Node* theInstance);
-    void providedRepresentation(const char* moduleName, Node* theInstance, void (*updateRepresentation)(Node* , Node* ), RepresentationCloneable* representationCloneable);
-    void requiredRepresentation(const char* moduleName, const char* representationName);
-    void usedRepresentation(const char* moduleName, const char* representationName);
-    Node* getRepresentation(const char* moduleName, const char* representationName);
-
     /** Computational resources */
     void activateThreads(const bool& threadsActivated);
     void computeGraph();
     void sort();
 
-#if defined(EMBEDDED_MODE)
-    void setup();
-    void loop();
-
-    void setBaudRate(const unsigned long& baudRate);
-    unsigned long getBaudRate() const;
-#endif
-
-  private:
     static void threadAllocate(Thread* thread);
 #if !defined(EMBEDDED_MODE)
     static void threadTransfer(Thread* thread);
@@ -498,9 +481,26 @@ class Controller
     static Controller* theInstance;
 
   public:
+    static Controller& getInstance();
+    static void deleteInstance();
+    void addModule(const char* threadName, const int& threadPriority, Node* theInstance);
+    void providedRepresentation(const char* moduleName, Node* theInstance, void (*updateRepresentation)(Node* , Node* ), RepresentationCloneable* representationCloneable);
+    void requiredRepresentation(const char* moduleName, const char* representationName);
+    void usedRepresentation(const char* moduleName, const char* representationName);
+    Node* getRepresentation(const char* moduleName, const char* representationName);
+
 #if !defined(EMBEDDED_MODE)
-    static void main(const bool& threadsActivated);
+    void main(const bool& threadsActivated);
 #endif
+#if defined(EMBEDDED_MODE)
+    void setup();
+    void loop();
+
+    void setBaudRate(const unsigned long& baudRate);
+    unsigned long getBaudRate() const;
+#endif
+
+
     /** verbose */
     void stream();
 };

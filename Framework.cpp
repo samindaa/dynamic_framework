@@ -486,6 +486,11 @@ void Controller::sort()
 #if defined(EMBEDDED_MODE)
 void Controller::setup()
 {
+  /*Graph manipulations*/
+  computeGraph();
+  sort();
+
+  /*Initialize modules in threads*/
   for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
       thread++)
   threadAllocate(*thread);
@@ -493,6 +498,7 @@ void Controller::setup()
 
 void Controller::loop()
 {
+  /*Update modules and representations in threads*/
   for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
       thread++)
   threadUpdate(*thread);
@@ -551,14 +557,11 @@ void Controller::mainThreadLoop()
 
 void Controller::main(const bool& threadsActivated)
 {
-  if (theInstance)
-  {
-    theInstance->activateThreads(threadsActivated);
-    theInstance->computeGraph();
-    theInstance->sort();
-    theInstance->stream();
-    theInstance->mainLoop();
-  }
+  activateThreads(threadsActivated);
+  computeGraph();
+  sort();
+  stream();
+  mainLoop();
 }
 
 #endif
