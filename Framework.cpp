@@ -480,35 +480,33 @@ void Controller::sort()
   purgeEntries();
 }
 
-#if defined(EMBEDDED_MODE)
 void Controller::setup(unsigned long baudRate)
 {
-#if defined(RED_LED)
+#if defined(EMBEDDED_MODE)
+  /* Some boards names are not defined.
+   * If the code doesn't compile remove those
+   * lines below.
+   */
   pinMode(RED_LED, OUTPUT);
-  digitalWrite(RED_LED, LOW);
-#endif
-#if defined(GREEN_LED)
   pinMode(GREEN_LED, OUTPUT);
-  digitalWrite(GREEN_LED, LOW);
-#endif
-#if defined(BLUE_LED)
   pinMode(BLUE_LED, OUTPUT);
+  digitalWrite(RED_LED, LOW);
+  digitalWrite(GREEN_LED, LOW);
   digitalWrite(BLUE_LED, LOW);
-#endif
-#if defined(PUSH1)
+
   pinMode(PUSH1, INPUT_PULLUP); // left - note _PULLUP
-#endif
-#if defined(PUSH2)
   pinMode(PUSH2, INPUT_PULLUP); // right - note _PULLUP
-#endif
+
   /**Serial*/
   Serial.begin(baudRate);
   // I2C
   Wire.begin();
+#endif
 
   /*Graph manipulations*/
   computeGraph();
   sort();
+  stream();
 
   /*Initialize modules in threads*/
   for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end(); thread++)
@@ -519,9 +517,13 @@ void Controller::loop()
 {
   /*Update modules and representations in threads*/
   for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end(); thread++)
-    threadUpdate(*thread);
-}
+  {
+#if !defined(EMBEDDED_MODE)
+    threadTransfer(*thread);
 #endif
+    threadUpdate(*thread);
+  }
+}
 
 #if !defined(EMBEDDED_MODE)
 void Controller::mainLoop()

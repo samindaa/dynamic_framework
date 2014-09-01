@@ -489,12 +489,9 @@ class Controller
 #if !defined(EMBEDDED_MODE)
     void main(const bool& threadsActivated);
 #endif
-#if defined(EMBEDDED_MODE)
+    /*Give control to other threads*/
     void setup(unsigned long baudRate);
     void loop();
-#endif
-
-
     /** verbose */
     void stream();
 };
