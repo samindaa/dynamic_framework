@@ -13,30 +13,11 @@
 #include <fstream>
 #endif
 
-#if defined(EMBEDDED_MODE)
-void Controller::setBaudRate(const unsigned long& baudRate)
-{
-  this->baudRate = baudRate;
-}
-
-unsigned long Controller::getBaudRate() const
-{
-  return baudRate;
-}
-#endif
-
 void Controller::errorHandler()
 {
 #if defined(EMBEDDED_MODE)
   if (errorState)
   {
-    Serial.begin(baudRate);
-    pinMode(RED_LED, OUTPUT);
-    pinMode(GREEN_LED, OUTPUT);
-    pinMode(BLUE_LED, OUTPUT);
-    digitalWrite(RED_LED, LOW);
-    digitalWrite(GREEN_LED, LOW);
-    digitalWrite(BLUE_LED, LOW);
     uint8_t ledErrorState = HIGH;
     unsigned long prevTime1 = millis();
     unsigned long prevTime2 = prevTime1;
@@ -53,7 +34,9 @@ void Controller::errorHandler()
         prevTime2 = millis();
         ledErrorState ^= HIGH;
       }
+#if defined(RED_LED)
       digitalWrite(RED_LED, ledErrorState);
+#endif
     }
   }
 #endif

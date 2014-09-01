@@ -15,6 +15,7 @@
 #if defined(EMBEDDED_MODE)
 #include "Energia.h"
 #include "pins_energia.h"
+#include "Wire.h"
 #endif
 //
 #include <string.h>
@@ -447,10 +448,6 @@ class Controller
     ModuleRepresentationVector moduleRepresentationUsedVector;
     ThreadVector threadVector;
 
-#if defined(EMBEDDED_MODE)
-    unsigned long baudRate;
-#endif
-
     /** Computational resources */
     void activateThreads(const bool& threadsActivated);
     void computeGraph();
@@ -493,11 +490,8 @@ class Controller
     void main(const bool& threadsActivated);
 #endif
 #if defined(EMBEDDED_MODE)
-    void setup();
+    void setup(unsigned long baudRate);
     void loop();
-
-    void setBaudRate(const unsigned long& baudRate);
-    unsigned long getBaudRate() const;
 #endif
 
 

@@ -3,7 +3,7 @@
 
 void setup()
 {
-  Controller::getInstance().setup();
+  Controller::getInstance().setup(115200);
 }
 
 void loop()
