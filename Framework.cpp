@@ -45,7 +45,7 @@ Controller::~Controller()
     {
       Node* node = *iter2;
       if (node->isComputationNode())
-      ((Module*) node)->config.persist();
+        ((Module*) node)->config.persist();
     }
 #endif
     delete thread;
@@ -184,13 +184,6 @@ Node* Controller::getRepresentation(const char* moduleName, const char* represen
   errorMsg += (representationName);
   forcedExit(errorMsg);
   return 0;
-}
-
-void Controller::activateThreads(const bool& threadsActivated)
-{
-#if !defined(EMBEDDED_MODE)
-  this->threadsActivated = threadsActivated;
-#endif
 }
 
 void Controller::computeGraph()
@@ -480,7 +473,16 @@ void Controller::sort()
   purgeEntries();
 }
 
-void Controller::setup(unsigned long baudRate)
+void Controller::initialize(const bool& threadsActivated)
+{
+  /*Graph manipulations*/
+  this->threadsActivated = threadsActivated;
+  computeGraph();
+  sort();
+  stream();
+}
+
+void Controller::setup(unsigned long baudRate, const bool& threadsActivated)
 {
 #if defined(EMBEDDED_MODE)
   /* Some boards names are not defined.
@@ -495,7 +497,7 @@ void Controller::setup(unsigned long baudRate)
   digitalWrite(BLUE_LED, LOW);
 
   pinMode(PUSH1, INPUT_PULLUP); // left - note _PULLUP
-  pinMode(PUSH2, INPUT_PULLUP); // right - note _PULLUP
+  pinMode(PUSH2, INPUT_PULLUP);// right - note _PULLUP
 
   /**Serial*/
   Serial.begin(baudRate);
@@ -503,10 +505,7 @@ void Controller::setup(unsigned long baudRate)
   Wire.begin();
 #endif
 
-  /*Graph manipulations*/
-  computeGraph();
-  sort();
-  stream();
+  initialize(threadsActivated);
 
   /*Initialize modules in threads*/
   for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end(); thread++)
@@ -532,7 +531,7 @@ void Controller::mainLoop()
   {
     for (ThreadVector::iterator thread = threadVector.begin(); thread != threadVector.end();
         thread++)
-    threadAllocate(*thread);
+      threadAllocate(*thread);
 
     for (;;)
     {
@@ -545,7 +544,7 @@ void Controller::mainLoop()
     }
   }
   else
-  mainThreadLoop();
+    mainThreadLoop();
 }
 
 void Controller::mainThreadLoop()
@@ -558,37 +557,31 @@ void Controller::mainThreadLoop()
     sched_param sch;
     int policy;
     if (pthread_getschedparam(threadHandle, &policy, &sch) != 0)
-    std::cout << "Unsuccessful in pthread_getschedparam" << std::endl;
+      std::cout << "Unsuccessful in pthread_getschedparam" << std::endl;
     else
-    std::cout << "Successful in pthread_getschedparam" << std::endl;
+      std::cout << "Successful in pthread_getschedparam" << std::endl;
 
     sch.sched_priority = (*thread)->threadPriority; //<< configurable
     if (pthread_setschedparam(threadHandle, SCHED_FIFO, &sch))
-    std::cout << "Failed to pthread_setschedparam: " << std::strerror(errno)
-    << " threadPriority: " << (*thread)->threadPriority << std::endl;
+      std::cout << "Failed to pthread_setschedparam: " << std::strerror(errno)
+          << " threadPriority: " << (*thread)->threadPriority << std::endl;
     else
-    std::cout << "Set pthread_setschedparam to threadPriority: " << (*thread)->threadPriority
-    << std::endl;
+      std::cout << "Set pthread_setschedparam to threadPriority: " << (*thread)->threadPriority
+          << std::endl;
   }
 
   for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++)
-  (*iter).join();
+    (*iter).join();
 }
 
 void Controller::main(const bool& threadsActivated)
 {
-  activateThreads(threadsActivated);
-  computeGraph();
-  sort();
-  stream();
+  initialize(threadsActivated);
   mainLoop();
 }
 
-#endif
-
 void Controller::threadLoop(Thread* thread)
 {
-#if !defined(EMBEDDED_MODE)
   thread->isActive = true;
   threadAllocate(thread);
   while (thread->isActive)
@@ -597,8 +590,25 @@ void Controller::threadLoop(Thread* thread)
     threadUpdate(thread);
     //std::this_thread::sleep_for(std::chrono::milliseconds(5)); //<< debug and timing
   }
-#endif
 }
+
+void Controller::threadTransfer(Thread* thread)
+{
+  for (Thread::NodeVector::iterator iter2 = thread->transferredVector.begin();
+      iter2 != thread->transferredVector.end(); ++iter2)
+  {
+    Representation* thisNode = (Representation*) *iter2;
+    Representation* thatNode = (Representation*) thisNode->getTransferredNode();
+    if (thread->isActive)
+      thatNode->sync.lock();
+    ((Serializable*) thatNode)->writeToBuffer(thread->buffer);
+    ((Serializable*) thisNode)->readFromBuffer(thread->buffer);
+    if (thread->isActive)
+      thatNode->sync.unlock();
+  }
+}
+
+#endif
 
 void Controller::threadAllocate(Thread* thread)
 {
@@ -623,28 +633,6 @@ void Controller::threadAllocate(Thread* thread)
   }
 }
 
-#if !defined(EMBEDDED_MODE)
-void Controller::threadTransfer(Thread* thread)
-{
-  for (Thread::NodeVector::iterator iter2 = thread->transferredVector.begin();
-      iter2 != thread->transferredVector.end(); ++iter2)
-  {
-    Representation* thisNode = (Representation*) *iter2;
-    Representation* thatNode = (Representation*) thisNode->getTransferredNode();
-#if !defined(EMBEDDED_MODE)
-    if (thread->isActive)
-    thatNode->sync.lock();
-#endif
-    ((Serializable*) thatNode)->writeToBuffer(thread->buffer);
-    ((Serializable*) thisNode)->readFromBuffer(thread->buffer);
-#if !defined(EMBEDDED_MODE)
-    if (thread->isActive)
-    thatNode->sync.unlock();
-#endif
-  }
-}
-#endif
-
 void Controller::threadUpdate(Thread* thread)
 {
   // 2) Execute / Update
@@ -659,12 +647,12 @@ void Controller::threadUpdate(Thread* thread)
     {
 #if !defined(EMBEDDED_MODE)
       if (thread->isActive)
-      ((Representation*) node)->sync.lock();
+        ((Representation*) node)->sync.lock();
 #endif
       ((Representation*) node)->updateThis(*node->getPreviousNodes().begin(), node);
 #if !defined(EMBEDDED_MODE)
       if (thread->isActive)
-      ((Representation*) node)->sync.unlock();
+        ((Representation*) node)->sync.unlock();
 #endif
       ((Representation*) node)->draw();
     }

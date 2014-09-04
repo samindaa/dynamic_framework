@@ -448,19 +448,18 @@ class Controller
     ModuleRepresentationVector moduleRepresentationUsedVector;
     ThreadVector threadVector;
 
+    void initialize(const bool& threadsActivated);
     /** Computational resources */
-    void activateThreads(const bool& threadsActivated);
     void computeGraph();
     void sort();
 
     static void threadAllocate(Thread* thread);
-#if !defined(EMBEDDED_MODE)
-    static void threadTransfer(Thread* thread);
-#endif
     static void threadUpdate(Thread* thread);
-    static void threadLoop(Thread* thread);
 
 #if !defined(EMBEDDED_MODE)
+    static void threadTransfer(Thread* thread);
+    static void threadLoop(Thread* thread);
+
     void mainLoop();
     void mainThreadLoop();
 #endif
@@ -487,10 +486,11 @@ class Controller
     Node* getRepresentation(const char* moduleName, const char* representationName);
 
 #if !defined(EMBEDDED_MODE)
+    /* Entry points for the user */
     void main(const bool& threadsActivated);
 #endif
     /*Give control to other threads*/
-    void setup(unsigned long baudRate);
+    void setup(unsigned long baudRate, const bool& threadsActivated = false);
     void loop();
     /** verbose */
     void stream();
