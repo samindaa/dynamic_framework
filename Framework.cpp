@@ -448,20 +448,41 @@ void Controller::sort()
 
     if (thread->operationVector.size() != thread->graphStructureVector.size())
     {
-      errorMsg += (" cycle detected!");
-      errorMsg += ("\n");
-      errorMsg += (" for thread=");
+      errorMsg += ("ERROR: a cycle detected for thread=");
       errorMsg += (thread->threadName);
       errorMsg += ("\n");
-      forcedExit(errorMsg);
-#if defined(EMBEDDED_MODE)
-      errorHandler();
-#endif
-    }
+      errorMsg += ("There could be more than one cycle. Use following suggestions to fix them.");
+      errorMsg += ("\n");
+      errorMsg += ("The potential cycle would be:");
+      errorMsg += ("\n");
+      for (int i = 0; i < thread->graphStructureVector.size(); i++)
+      {
+        bool startOfCycle = true;
+        for (int j = 0; j < thread->operationVector.size(); j++)
+        {
+          if (strcmp(thread->graphStructureVector[i]->getName(),
+              thread->operationVector[j]->getName()) == 0)
+          {
+            startOfCycle = false;
+            break;
+          }
+        }
 
-    if (thread->operationVector.size() != thread->graphStructureVector.size())
-    {
-      errorMsg += ("graphOutput.size() != graphStructureVector.size()");
+        if (startOfCycle)
+        {
+          Node* x = thread->graphStructureVector[i];
+          errorMsg += (x->getName());
+          errorMsg += (" adjacency list: ");
+          for (int j = 0; j < x->getNextNodes().size(); j++)
+          {
+            Node* y = x->getNextNodes()[j];
+            errorMsg += (y->getName());
+            errorMsg += "  ";
+          }
+          errorMsg += ("\n");
+        }
+      }
+      errorMsg += ("\n");
       forcedExit(errorMsg);
 #if defined(EMBEDDED_MODE)
       errorHandler();
