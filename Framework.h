@@ -134,7 +134,7 @@ class Vector
       theSize = 0;
       theCapacity = 0;
       if (objects)
-        delete[] objects;
+        free(objects);
       objects = 0;
     }
 
