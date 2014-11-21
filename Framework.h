@@ -493,7 +493,7 @@ class Controller
     void setup(unsigned long baudRate, const bool& threadsActivated = false);
     void loop();
     /** verbose */
-    void stream();
+    void verbose();
 };
 
 // All the computational units are loaded into an instance of this class.

@@ -500,7 +500,7 @@ void Controller::initialize(const bool& threadsActivated)
   this->threadsActivated = threadsActivated;
   computeGraph();
   sort();
-  stream();
+  verbose();
 }
 
 void Controller::setup(unsigned long baudRate, const bool& threadsActivated)

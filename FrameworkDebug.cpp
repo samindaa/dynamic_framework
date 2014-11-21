@@ -49,7 +49,7 @@ void Controller::forcedExit(const MyString& errorMsg)
   errorState = true;
 }
 
-void Controller::stream()
+void Controller::verbose()
 {
 #if !defined(EMBEDDED_MODE)
   std::cout << std::endl << std::endl;
