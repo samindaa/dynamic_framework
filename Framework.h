@@ -63,7 +63,7 @@ class Vector
       clear();
     }
 
-    const Vector & operator=(const Vector& that)
+    Vector& operator=(const Vector& that)
     {
       if (this != &that)
       {
@@ -96,14 +96,13 @@ class Vector
 
       T *oldArray = objects;
 
-      objects =  (T*)malloc(newCapacity * sizeof(T));
+      objects = (T*) malloc(newCapacity * sizeof(T));
       for (int k = 0; k < theSize; k++)
         objects[k] = oldArray[k];
 
       theCapacity = newCapacity;
 
-      if (oldArray)
-       free(oldArray);
+      free(oldArray);
     }
 
     T& operator[](int index) { return objects[index]; }
