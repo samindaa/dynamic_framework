@@ -28,8 +28,8 @@ Controller* Controller::theInstance = 0;
 /**
  *
  */
-Controller::Controller() :
-    threadsActivated(false), errorState(false)
+Controller::Controller()
+    : threadsActivated(false), errorState(false)
 {
 }
 
@@ -386,11 +386,27 @@ void Controller::sort()
               RepresentationEntry* representationEntry = *iter;
               if (strcmp(representationEntry->representationNode->getName(), y->getName()) == 0)
               {
-                Node* newNode = representationEntry->representationCloneable->clone(y);
-                newNode->setThreadIndex(thread->threadIndex);
-                newNode->setInitialized(true);
-                newNode->addNextNode(x);
-                thread->transferredVector.push_back(newNode);
+                // Check if this representation is already in transferredVector
+                bool transferredRepresentation = false;
+                for (Thread::NodeVector::iterator iterTransfer = thread->transferredVector.begin();
+                    iterTransfer != thread->transferredVector.end(); iterTransfer++)
+                {
+                  Node* transferredNode = *iterTransfer;
+                  if (strcmp(transferredNode->getName(), y->getName()) == 0)
+                  {
+                    transferredRepresentation = true;
+                    break;
+                  }
+                }
+
+                if (!transferredRepresentation)
+                {
+                  Node* newNode = representationEntry->representationCloneable->clone(y);
+                  newNode->setThreadIndex(thread->threadIndex);
+                  newNode->setInitialized(true);
+                  newNode->addNextNode(x);
+                  thread->transferredVector.push_back(newNode);
+                }
                 break;
               }
             }
@@ -667,13 +683,13 @@ void Controller::threadUpdate(Thread* thread)
     else
     {
 #if !defined(EMBEDDED_MODE)
-      if (thread->isActive)
-        ((Representation*) node)->sync.lock();
+      //if (thread->isActive)
+      //  ((Representation*) node)->sync.lock();
 #endif
       ((Representation*) node)->updateThis(*node->getPreviousNodes().begin(), node);
 #if !defined(EMBEDDED_MODE)
-      if (thread->isActive)
-        ((Representation*) node)->sync.unlock();
+      //if (thread->isActive)
+      //  ((Representation*) node)->sync.unlock();
 #endif
       ((Representation*) node)->draw();
     }
