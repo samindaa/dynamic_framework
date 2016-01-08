@@ -182,7 +182,7 @@ class ObjectInput
     virtual ~ObjectInput() {}
 
                       void read(unsigned char* destination, const int& size) { in->read(destination, size); }
-    template<class T> void read(T& d) { read((unsigned char*) &d, sizeof(T)); }
+    template<typename T> void read(T& d) { read((unsigned char*) &d, sizeof(T)); }
 };
 
 class ObjectOutput
@@ -195,7 +195,7 @@ class ObjectOutput
     virtual ~ObjectOutput() {}
 
                       void write(const unsigned char* source, const int& size) { out->write(source, size); }
-    template<class T> void write(const T& d) { write((const unsigned char*) &d, sizeof(T)); }
+    template<typename T> void write(const T& d) { write((const unsigned char*) &d, sizeof(T)); }
 };
 
 class Serializable
@@ -229,7 +229,7 @@ class Serializable
         out->write(p, size);
     }
 
-    template <class T> void serializeObject(ObjectInput* in, ObjectOutput* out, const char*, T& p)
+    template <typename T> void serializeObject(ObjectInput* in, ObjectOutput* out, const char*, T& p)
     {
         if (in)
           in->read(p);
@@ -304,13 +304,12 @@ class Module : public Node
   public: virtual void execute()  {}
 };
 
-template<class T>
+template<typename T>
 class ModuleTemplate : public Module
 {
   public: ModuleTemplate()          {}
   public: virtual ~ModuleTemplate() {}
   public: virtual unsigned int getSize() const { return sizeof(T); }
-  public: void stream(Node*)      {}
 };
 
 // -- Representations
@@ -333,7 +332,7 @@ class Representation: public Node, public Serializable
 #endif
 };
 
-template<class T>
+template<typename T>
 class RepresentationTemplate : public Representation
 {
   public: RepresentationTemplate()          {}
@@ -402,8 +401,7 @@ class Controller
         enum { BUFFER_SIZE = 512 }; // some storage capacity (bytes)
 #endif
         Thread(const char* threadName, const int& threadPriority, const int& threadIndex) :
-            threadName(threadName), threadIndex(threadIndex), threadPriority(threadPriority), isActive(
-                false), buffer(0)
+            threadName(threadName), threadIndex(threadIndex), threadPriority(threadPriority), isActive(false), buffer(0)
         {
 #if !defined(EMBEDDED_MODE)
           buffer = new unsigned char[BUFFER_SIZE];
@@ -496,7 +494,7 @@ class Controller
 };
 
 // All the computational units are loaded into an instance of this class.
-template <class T>
+template <typename T>
 class ModuleLoader
 {
   private:
@@ -524,7 +522,7 @@ class RepresentationProvider : public RepresentationCloneable
     }
 };
 
-template<const char* (*getModuleName)(), const char* (*getRepresentationName)(), class T>
+template<const char* (*getModuleName)(), const char* (*getRepresentationName)(), typename T>
 class RepresentationPointer
 {
   protected:
@@ -556,7 +554,7 @@ class RepresentationPointer
 
 };
 
-template<const char* (*getModuleName)(), const char* (*getRepresentationName)(), class T>
+template<const char* (*getModuleName)(), const char* (*getRepresentationName)(), typename T>
 class RepresentationRequierer : public RepresentationPointer<getModuleName, getRepresentationName, T>
 {
   public:
@@ -573,7 +571,7 @@ class RepresentationRequierer : public RepresentationPointer<getModuleName, getR
 
 };
 
-template<const char* (*getModuleName)(), const char* (*getRepresentationName)(), class T>
+template<const char* (*getModuleName)(), const char* (*getRepresentationName)(), typename T>
 class RepresentationUser : public RepresentationPointer<getModuleName, getRepresentationName, T>
 {
   public:

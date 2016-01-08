@@ -34,7 +34,7 @@ class Config
     ~Config();
 
   private:
-    template<class T>
+    template<typename T>
     T getCfgValue(const std::string& name, T value)
     {
       Values::iterator iter = values.find(name);
@@ -57,7 +57,7 @@ class Config
       return value;
     }
 
-    template<class T>
+    template<typename T>
     void setCfgValue(const std::string& name, T value)
     {
       Values::iterator iter = values.find(name);

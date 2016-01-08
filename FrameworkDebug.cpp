@@ -11,6 +11,7 @@
 #include "Framework.h"
 #if !defined(EMBEDDED_MODE)
 #include <fstream>
+#include <map>
 #endif
 
 void Controller::errorHandler()
@@ -72,6 +73,15 @@ void Controller::verbose()
   }
 
   std::cout << std::endl;
+
+  // One graph for all the threads
+  std::cout << std::endl << std::endl;
+  std::cout.flush();
+  std::ofstream graph("graph.dot");
+
+  graph << "digraph G {\n";
+  int graphCounter = 0;
+
   for (ThreadVector::iterator iter = threadVector.begin(); iter != threadVector.end(); iter++)
   {
     Thread* thread = *iter;
@@ -116,103 +126,134 @@ void Controller::verbose()
     }
 
     // Graphviz output
-    std::cout << std::endl << std::endl;
-    std::cout.flush();
-    std::stringstream graph_structure;
-    graph_structure << "graph_structure" << "_" << thread->threadName << ".dot";
-    std::ofstream graph(graph_structure.str().c_str());
-    if (graph.is_open())
+    typedef std::map<const char*, int> LabelToIdMap;
+    LabelToIdMap labelToIdMap;
+
+    graph << "\n subgraph cluster_" << (++graphCounter) << " {\n";
+    graph << "\t label=" << "\"" << thread->threadName << "\"; \n";
+
+
+    for (Thread::NodeVector::const_iterator iter2 = thread->operationVector.begin();
+        iter2 != thread->operationVector.end(); iter2++)
     {
-      graph << "digraph G {\n";
-
-      for (Thread::NodeVector::const_iterator iter2 = thread->operationVector.begin();
-          iter2 != thread->operationVector.end(); iter2++)
-      {
-        const Node* x = *iter2;
-        if (x->isComputationNode())
-          graph << "\t node [shape=box, fillcolor=\"green:yellow\","
-              << " style=filled, penwidth=2, gradientangle=270]; \n";
-        else
-          graph << "\t node [shape=ellipse, fillcolor=\"gold:yellow\","
-              << " style=filled, penwidth=2, gradientangle=270]; \n";
-        graph << " " << x->getName() << "; \n";
-      }
-      graph << "\n";
-
-      for (Thread::NodeVector::iterator iter2 = thread->transferredVector.begin();
-          iter2 != thread->transferredVector.end(); iter2++)
-      {
-        Node* x = *iter2;
-        graph << "\t node [shape=egg, fillcolor=\"orange:yellow\","
+      const Node* x = *iter2;
+      if (x->isComputationNode())
+        graph << "\t node [shape=box, fillcolor=\"green:yellow\","
             << " style=filled, penwidth=2, gradientangle=270]; \n";
-        graph << " " << x->getName() << "; \n";
-      }
-      graph << "\n";
+      else
+        graph << "\t node [shape=ellipse, fillcolor=\"gold:yellow\","
+            << " style=filled, penwidth=2, gradientangle=270]; \n";
 
-      // transferred Vector
-      for (Thread::NodeVector::iterator iter2 = thread->transferredVector.begin();
-          iter2 != thread->transferredVector.end(); iter2++)
-      {
-        Node* x = *iter2;
-        for (Node::NodeVector::iterator j = x->getNextNodes().begin(); j != x->getNextNodes().end();
-            j++)
-        {
-          Node* y = *j;
-          if (y->isComputationNode())
-          {
-            graph << "edge [color=black]; \n";
-            graph << "\t" << x->getName() << " -> " << y->getName() << "; \n";
-          }
-        }
-        if (x->getNextNodes().empty())
-          graph << "\t" << x->getName() << "; \n";
-      }
+      LabelToIdMap::iterator labelToIdMapIter = labelToIdMap.find(x->getName());
+      if (labelToIdMapIter == labelToIdMap.end())
+        labelToIdMap.insert(std::make_pair(x->getName(), (++graphCounter)));
 
-      for (Thread::NodeVector::iterator iter2 = thread->operationVector.begin();
-          iter2 != thread->operationVector.end(); iter2++)
-      {
-        Node* x = *iter2;
-        for (Node::NodeVector::iterator j = x->getNextNodes().begin(); j != x->getNextNodes().end();
-            j++)
-        {
-          Node* y = *j;
-          if (x->getThreadIndex() == y->getThreadIndex())
-          {
-            if (y->isComputationNode())
-              graph << "edge [color=black]; \n";
-            else
-              graph << "edge [color=blue]; \n";
-            graph << "\t" << x->getName() << " -> " << y->getName() << "; \n";
-          }
-        }
-        if (x->getNextNodes().empty())
-          graph << "\t" << x->getName() << "; \n";
+      graph << "\t" << labelToIdMap[x->getName()] << "[label = \"" << x->getName() << "\"]"
+          << "; \n";
 
-      }
-      graph << "edge [color=red]; \n";
-      for (Thread::NodeVector::iterator iter2 = thread->operationVector.begin();
-          iter2 != thread->operationVector.end(); iter2++)
-      {
-        Node* x = *iter2;
-        if (!x->auxiliaryNodesEmpty())
-        {
-          for (Node::NodeVector::iterator j = x->getAuxiliaryNodes().begin();
-              j != x->getAuxiliaryNodes().end(); j++)
-          {
-            Node* y = *j;
-            graph << "\t" << x->getName() << " -> " << y->getName() << "; \n";
-          }
-        }
-      }
-
-      graph << "\t fontsize=20; \n";
-      graph << "} \n";
-      graph.close();
+      //graph << " " << x->getName() << "; \n";
     }
-    else
+    graph << "\n";
+
+    for (Thread::NodeVector::iterator iter2 = thread->transferredVector.begin();
+        iter2 != thread->transferredVector.end(); iter2++)
     {
-      std::cerr << "ERROR! unable to open the graph_structure.dot file" << std::endl;
+      Node* x = *iter2;
+      graph << "\t node [shape=ellipse, fillcolor=\"orange:yellow\","
+          << " style=\"filled, dashed\" penwidth=2, gradientangle=270]; \n";
+
+      LabelToIdMap::iterator labelToIdMapIter = labelToIdMap.find(x->getName());
+      if (labelToIdMapIter == labelToIdMap.end())
+        labelToIdMap.insert(std::make_pair(x->getName(), (++graphCounter)));
+
+      graph << "\t" << labelToIdMap[x->getName()] << "[label = \"" << x->getName() << "\"]"
+          << "; \n";
+
+      //graph << " " << x->getName() << "; \n";
     }
+    graph << "\n";
+
+    // transferred Vector
+    for (Thread::NodeVector::iterator iter2 = thread->transferredVector.begin();
+        iter2 != thread->transferredVector.end(); iter2++)
+    {
+      Node* x = *iter2;
+      for (Node::NodeVector::iterator j = x->getNextNodes().begin(); j != x->getNextNodes().end();
+          j++)
+      {
+        Node* y = *j;
+        if (y->isComputationNode())
+        {
+          graph << "edge [color=black]; \n";
+
+          graph << "\t" << labelToIdMap[x->getName()] << " -> " << labelToIdMap[y->getName()]
+              << "; \n";
+
+          //graph << "\t" << x->getName() << " -> " << y->getName() << "; \n";
+        }
+      }
+
+      if (x->getNextNodes().empty())
+        graph << "\t" << labelToIdMap[x->getName()] << "[label = \"" << x->getName() << "\"]"
+            << "; \n";
+
+      //graph << "\t" << x->getName() << "; \n";
+    }
+
+    for (Thread::NodeVector::iterator iter2 = thread->operationVector.begin();
+        iter2 != thread->operationVector.end(); iter2++)
+    {
+      Node* x = *iter2;
+      for (Node::NodeVector::iterator j = x->getNextNodes().begin(); j != x->getNextNodes().end();
+          j++)
+      {
+        Node* y = *j;
+        if (x->getThreadIndex() == y->getThreadIndex())
+        {
+          if (y->isComputationNode())
+            graph << "edge [color=black]; \n";
+          else
+            graph << "edge [color=blue]; \n";
+
+          graph << "\t" << labelToIdMap[x->getName()] << " -> " << labelToIdMap[y->getName()]
+              << "; \n";
+
+          //graph << "\t" << x->getName() << " -> " << y->getName() << "; \n";
+        }
+      }
+      if (x->getNextNodes().empty())
+        graph << "\t" << labelToIdMap[x->getName()] << "[label = \"" << x->getName() << "\"]"
+            << "; \n";
+
+      //graph << "\t" << x->getName() << "; \n";
+
+    }
+    graph << "edge [color=red]; \n";
+    for (Thread::NodeVector::iterator iter2 = thread->operationVector.begin();
+        iter2 != thread->operationVector.end(); iter2++)
+    {
+      Node* x = *iter2;
+      if (!x->auxiliaryNodesEmpty())
+      {
+        for (Node::NodeVector::iterator j = x->getAuxiliaryNodes().begin();
+            j != x->getAuxiliaryNodes().end(); j++)
+        {
+          Node* y = *j;
+
+          graph << "\t" << labelToIdMap[x->getName()] << " -> " << labelToIdMap[y->getName()]
+              << "; \n";
+
+          //graph << "\t" << x->getName() << " -> " << y->getName() << "; \n";
+        }
+      }
+    }
+
+    graph << "} \n";
+
   }
+
+  graph << "\n } \n";
+  graph.close();
+
 #endif
 }
