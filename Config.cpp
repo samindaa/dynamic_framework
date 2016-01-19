@@ -71,7 +71,7 @@ void Config::resurrect()
     {
       if (str.length())
       {
-        unsigned int found = str.find_first_of("#");
+        std::string::size_type found = str.find_first_of("#");
         if ((found == std::string::npos) && (found > str.size()))
         {
           std::vector<std::string> tokens;

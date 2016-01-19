@@ -9,7 +9,6 @@
 //
 #if !defined(EMBEDDED_MODE)
 //
-#include <iostream>
 #include <csignal>
 
 void signalHandler(int signum)
