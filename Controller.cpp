@@ -1,11 +1,11 @@
 /*
- * Graph.cpp
+ * Controller.cpp
  *
  *  Created on: Jul 12, 2013
  *      Author: sam
  */
 
-#include "Framework.h"
+#include "Controller.h"
 //
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,7 +13,6 @@
 #include <stdint.h>
 //
 #if !defined(EMBEDDED_MODE)
-#include <iostream>
 #include <vector> // with threads
 #include <fstream> // error output
 #include <cstring>
@@ -22,6 +21,10 @@
 #include <pthread.h>
 #include <sched.h>
 #endif
+//
+#include "Module.h"
+#include "Representation.h"
+#include "Serializable.h"
 /**
  *
  */

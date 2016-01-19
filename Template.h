@@ -8,7 +8,12 @@
 #ifndef TEMPLATE_H_
 #define TEMPLATE_H_
 
-#include "Framework.h"
+#include "ModuleTemplate.h"
+#include "RepresentationTemplate.h"
+#include "RepresentationProvider.h"
+#include "RepresentationRequierer.h"
+#include "RepresentationUser.h"
+#include "ModuleLoader.h"
 
 // Streams
 #define SERIALIZE_1(IN_OUT)         serializeObject(in, out, #IN_OUT, IN_OUT);

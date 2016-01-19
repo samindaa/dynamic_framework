@@ -8,7 +8,13 @@
 /**
  * This file contains methods from Framework.h that is used in debug
  */
-#include "Framework.h"
+#include "Controller.h"
+//
+#if !defined(EMBEDDED_MODE)
+#include <mutex>
+#include "Config.h"
+#endif
+//
 #if !defined(EMBEDDED_MODE)
 #include <fstream>
 #include <map>
