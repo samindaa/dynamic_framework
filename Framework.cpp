@@ -15,6 +15,7 @@
 #if !defined(EMBEDDED_MODE)
 #include <iostream>
 #include <vector> // with threads
+#include <fstream> // error output
 #include <cstring>
 #include <chrono>
 #include <thread>
@@ -469,8 +470,15 @@ void Controller::sort()
       errorMsg += ("\n");
       errorMsg += ("There could be more than one cycle. Use following suggestions to fix them.");
       errorMsg += ("\n");
-      errorMsg += ("The potential cycle would be:");
+      errorMsg += ("The potential cycle would be (see also graph_err.dot):");
       errorMsg += ("\n");
+
+#if !defined(EMBEDDED_MODE)
+     std::ofstream ofsGraphErr("graph_err.dot");
+     ofsGraphErr << "digraph G {\n";
+     ofsGraphErr << "\t label=\"" << thread->threadName << "\"; \n";
+#endif
+
       for (int i = 0; i < thread->graphStructureVector.size(); i++)
       {
         bool startOfCycle = true;
@@ -488,17 +496,33 @@ void Controller::sort()
         {
           Node* x = thread->graphStructureVector[i];
           errorMsg += (x->getName());
+
+#if !defined(EMBEDDED_MODE)
+     ofsGraphErr << "\t" << x->getName() << " -> ";
+#endif
+
           errorMsg += (" adjacency list: ");
           for (int j = 0; j < x->getNextNodes().size(); j++)
           {
             Node* y = x->getNextNodes()[j];
             errorMsg += (y->getName());
             errorMsg += "  ";
+
+#if !defined(EMBEDDED_MODE)
+     ofsGraphErr << y->getName() << "; \n";
+#endif
+
           }
           errorMsg += ("\n");
         }
       }
       errorMsg += ("\n");
+
+#if !defined(EMBEDDED_MODE)
+     ofsGraphErr << "}\n";
+     ofsGraphErr.close();
+#endif
+
       forcedExit(errorMsg);
 #if defined(EMBEDDED_MODE)
       errorHandler();
@@ -528,10 +552,14 @@ void Controller::setup(unsigned long baudRate, const bool& threadsActivated)
    */
   pinMode(RED_LED, OUTPUT);
   pinMode(GREEN_LED, OUTPUT);
+#if defined(BLUE_LED)
   pinMode(BLUE_LED, OUTPUT);
+#endif
   digitalWrite(RED_LED, LOW);
   digitalWrite(GREEN_LED, LOW);
+#if defined(BLUE_LED)
   digitalWrite(BLUE_LED, LOW);
+#endif
 
   pinMode(PUSH1, INPUT_PULLUP); // left - note _PULLUP
   pinMode(PUSH2, INPUT_PULLUP);// right - note _PULLUP
@@ -608,7 +636,12 @@ void Controller::mainThreadLoop()
   }
 
   for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++)
-    (*iter).join();
+  {
+    if ((*iter).joinable())
+      (*iter).join();
+    else
+      forcedExit("Thread is not joinable");
+  }
 }
 
 void Controller::main(const bool& threadsActivated)
